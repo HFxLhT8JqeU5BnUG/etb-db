@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, select, Table, insert
+from sqlalchemy import create_engine, MetaData, select, Table, insert, text
 
 
 class Db:
@@ -75,3 +75,16 @@ class Db:
         with self.engine.connect() as connection:
             connection.execute(insert(table).values(rows))
             connection.commit()
+
+    
+    def execute_file(self, file_path: str):
+        '''execute a query from a .sql file'''
+
+        with open(file_path, 'r') as file:
+            content = file.read()
+
+        query = text(content)
+        # TODO: assertion ^^
+
+        with self.engine.connect() as connection:
+            connection.execute(query)
