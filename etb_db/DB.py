@@ -88,3 +88,4 @@ class Db:
 
         with self.engine.connect() as connection:
             connection.execute(query)
+            connection.commit()
