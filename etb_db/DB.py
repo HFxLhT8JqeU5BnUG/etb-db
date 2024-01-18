@@ -1,4 +1,6 @@
 from sqlalchemy import create_engine, MetaData, select, Table, insert, text
+from sqlalchemy.exc import ResourceClosedError
+from typing import Any
 
 
 class Db:
@@ -31,7 +33,7 @@ class Db:
         return self.meta.tables
 
 
-    def get(self, schema: str, table: str, cols: list[str] = ['*']) -> list[dict]:
+    def get(self, schema: str, table: str, cols: list[str] = ['*']) -> list[dict[str, Any]]:
         '''Simple select function, returns list of rows, each row as dict[column name, value]\n
         "table" can be a table name or a view
         do not qualify table names with schema, those are appended in this function\n
@@ -52,7 +54,7 @@ class Db:
         return [dict(zip(result.keys(), row)) for row in result]
 
 
-    def get_all(self, table: str, schema: str = None) -> list[dict]:
+    def get_all(self, table: str, schema: str = None) -> list[dict[str, Any]]:
         '''new function, pushes users to do database stuff on the database side\n
         all you can do with this is select * from <table/view/function>'''
 
@@ -77,7 +79,7 @@ class Db:
             connection.commit()
 
     
-    def execute_file(self, file_path: str):
+    def execute_file(self, file_path: str) -> list[dict[str, Any]] | None:
         '''execute a query from a .sql file'''
 
         with open(file_path, 'r') as file:
@@ -87,5 +89,12 @@ class Db:
         # TODO: assertion ^^
 
         with self.engine.connect() as connection:
-            connection.execute(query)
+            result = connection.execute(query)
             connection.commit()
+            
+            try: 
+                rows = [dict(zip(result.keys(), row)) for row in result.fetchall()]
+            except ResourceClosedError:
+                rows = None
+
+        return rows
